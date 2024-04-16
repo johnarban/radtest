@@ -3,391 +3,364 @@
   id="app"
   :style="cssVars"
 >
-  <div
-    id="main-content"
-  >
-    <WorldWideTelescope
-      :wwt-namespace="wwtNamespace"
-    ></WorldWideTelescope>
-    
-    
-    <wwt-hud
-      v-if="false"
-      :wwt-namespace="wwtNamespace"
-      :location="{top: '5rem', right: '1rem'}"
-      :offset-center="{x: 0, y: 0}"
-      :other-variables="{position3D: position3D, position2D: position2D, mode: modeReactive}"
-      text-shadow="none"
-      font-size="0.8em"
-    ></wwt-hud>
 
-    <!-- This contains the splash screen content -->
-
-    <v-overlay
-      :model-value="showSplashScreen"
-      absolute
-      opacity="0.6"
-      :style="cssVars"
-      id="splash-overlay"
+<v-row>
+  <v-col class="bg-indigo-darken-4" cols="4">
+    <main>
+      <h1>Uncertainty</h1>
+    </main>
+  </v-col>
+  <v-col  class="pa-8 bg-blue-darken-4" cols="8">
+    <div
+      id="main-content"
     >
-      <div
-        id="splash-screen"
-        v-click-outside="closeSplashScreen"
+      <WorldWideTelescope
+        :wwt-namespace="wwtNamespace"
+      ></WorldWideTelescope>
+      
+      
+      <wwt-hud
+        v-if="false"
+        :wwt-namespace="wwtNamespace"
+        :location="{top: '5rem', right: '1rem'}"
+        :offset-center="{x: 0, y: 0}"
+        :other-variables="{position3D: position3D, position2D: position2D, mode: modeReactive}"
+        text-shadow="none"
+        font-size="0.8em"
+      ></wwt-hud>
+
+      <!-- This contains the splash screen content -->
+
+      <v-overlay
+        :model-value="showSplashScreen"
+        contained
+        opacity="0.6"
         :style="cssVars"
+        id="splash-overlay"
       >
-        <div id="splash-screen-text">
-          <p>
-            Want to surf a <span 
-            :style="{'color': accentColor}"
-            >giant wave</span> in the Milky Way Galaxy? 
-            <!-- see the <span style="color: red;">Radcliffe Wave</span> <span class="color-span">oscillating</span> through our Galaxy? -->
-          </p>
-        </div>
         <div
-          id="close-splash-button"
-          @click="closeSplashScreen"
-          >Continue &rangle;&rangle;&rangle;
-        </div>
-        <div id="splash-screen-acknowledgements">
-          Brought to you by <a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank" rel="noopener noreferrer">Cosmic Data Stories</a> and <a href="https://www.worldwidetelescope.org/home/" target="_blank" rel="noopener noreferrer">WorldWide Telescope</a>.
-          
-          <div id="splash-screen-logos">
-            <credit-logos/>
+          id="splash-screen"
+          v-click-outside="closeSplashScreen"
+          :style="cssVars"
+        >
+          <div id="splash-screen-text">
+            <p>
+              Want to surf a <span 
+              :style="{'color': accentColor}"
+              >giant wave</span> in the Milky Way Galaxy? 
+              <!-- see the <span style="color: red;">Radcliffe Wave</span> <span class="color-span">oscillating</span> through our Galaxy? -->
+            </p>
+          </div>
+          <div
+            id="close-splash-button"
+            @click="closeSplashScreen"
+            >Continue &rangle;&rangle;&rangle;
+          </div>
+          <div id="splash-screen-acknowledgements">
+            Brought to you by <a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank" rel="noopener noreferrer">Cosmic Data Stories</a> and <a href="https://www.worldwidetelescope.org/home/" target="_blank" rel="noopener noreferrer">WorldWide Telescope</a>.
+            
+            <div id="splash-screen-logos">
+              <credit-logos/>
+            </div>
           </div>
         </div>
-      </div>
-    </v-overlay>
+      </v-overlay>
 
-    <transition>
-      <div
-        v-if="false"
-        class="no-background">
-      </div>
-      <div
-        v-else
-        :class="['modal', showSplashScreen ? 'no-background' : '']"
-        id="modal-loading"
-        v-show="isLoading || userNotReady"
-      >
-        <div v-if="isLoading" class="container">
-          <div  class="spinner"></div>
-          <p>Loading …</p>
-        </div>
-        <div v-else>
-          <v-btn
-            v-if="!showSplashScreen"
-            id="loading-button"
-            color="white"
-            :disabled="isLoading"
-            variant="outlined"
-            @click="userNotReady = false"
-            @keyup.enter="userNotReady = false"
-            elevation="10"
-            :size="smallSize ? 'large' : 'x-large'"
-            rounded="lg"
-            prepend-icon="mdi-check-circle-outline"
-          >
-            <strong>Start</strong>
-          </v-btn>
-        </div>  
-      </div>
-    </transition>
-
-    <!-- This block contains the elements (e.g. icon buttons displayed at/near the top of the screen -->
-
-    <div class="top-content">
-      <div v-if="modeReactive != null" id="left-buttons">
-        <icon-button
-          fa-icon="house"
-          @activate="() => {
-            positionReset();
-            timeReset();
-          }"
-          :color="buttonColor"
-          tooltip-text="Reset this view"
-          tooltip-location="start"
-        ></icon-button>
-        <icon-button
-          v-model="showTextSheet"
-          fa-icon="book-open"
-          :color="buttonColor"
-          :tooltip-text="showTextSheet ? 'Hide Info' : 'Learn More'"
-          tooltip-location="start"
-        >
-        </icon-button>
-        <icon-button
-          v-model="showVideoSheet"
-          fa-icon="video"
-          :color="buttonColor"
-          tooltip-text="Watch video"
-          tooltip-location="start"
-        >
-        </icon-button>
-      </div>
-      <div id="center-buttons">
-<!-- <p class="pointer-events"> {{ wwtPosition }} </p> -->
-        <icon-button
+      <transition>
+        <div
           v-if="false"
-          md-icon="mdi-sine-wave"
-          @activate="toggleFullwaveMode()"
-          :color="buttonColor"
-          tooltip-text="Full Wave Mode"
-          tooltip-location="bottom"
-        >
-        <template v-slot:button>
-          <span v-if="modeReactive != 'full'" class="no-select">View the Full Radcliffe Wave</span>
-          <v-icon v-if="modeReactive == 'full'">mdi-arrow-left</v-icon>
-        </template>
-        </icon-button>
-        
-        <icon-button
-          v-if="(playCount > 0) ?? (modeReactive == 'full')"
-          @activate="modeReactive = modeReactive == '3D' ? '2D' : '3D'"
-          :color="buttonColor"
-          tooltip-text="Switch modes"
-          tooltip-location="start"
-        >
-        <template v-slot:button>
-          <span class="no-select">See this {{ modeReactive == '3D' ? ' on the Sky (2D)' : 'in the Galaxy (3D)' }}</span>
-        </template>
-        </icon-button>
-        <icon-button
-          v-if="(playCount > 0) && modeReactive=='3D'"
-          @activate="() => {
-            positionReset();
-            timeReset();
-            playing=true;
-          }"
-          :color="buttonColor"
-          tooltip-text="Replay Wave Motion"
-          tooltip-location="end"
-        >
-        <template v-slot:button>
-          Replay
-        </template>
-        </icon-button>
-        
-        
-        
-      </div>
-      <div id="right-buttons">
-                <!-- add a menu selector for background2DImageset -->
-      </div>
-    </div>
-
-
-    <!-- This block contains the elements (e.g. the project icons) displayed along the bottom of the screen -->
-
-    <div class="bottom-content">
-      <div v-if="modeReactive != '2D'" id="time-controls">
-        <icon-button
-          id="play-pause-icon"
-          :fa-icon="!(playing) ? 'play' : 'pause'"
-          fa-size='xl'
-          @activate="() => {
-            playing = !(playing);
-          }"
-          :color="buttonColor"
-          tooltip-text="Play/Pause"
-          tooltip-location="top"
-          tooltip-offset="5px"
-          :show-tooltip="!mobile"
-        ></icon-button>
-        <input
-          type="range"
-          id="time-slider"
-          min="0"
-          max="720"
-          :oninput="onInputChange"
-        />
-      </div>
-      <div v-else id="time-controls" style="width:50%">
-        <v-select
-          v-if="modeReactive == '2D'"
-          v-model="background2DImageset"
-          :items="allSkyImagesets"
-          label="Background"
-          outlined
-          hide-details
-          :color="accentColor"
-          class="pointer-events"
-          />
-      </div>
-      <div id="body-logos" v-if= "!smallSize">
-        <credit-logos/>
-      </div>
-    </div>
-
-
-    <!-- This dialog contains the video that is displayed when the video icon is clicked -->
-
-    <v-dialog
-      id="video-container"
-      v-model="showVideoSheet"
-      transition="slide-y-transition"
-    >
-      <div class="video-wrapper">
-        <font-awesome-icon
-          id="video-close-icon"
-          class="close-icon"
-          icon="times"
-          size="lg"
-          @click="showVideoSheet = false"
-          @keyup.enter="showVideoSheet = false"
-          tabindex="0"
-        ></font-awesome-icon>
-        <!-- <video
-          controls
-          id="info-video"
-        >
-          <source src="./assets/ralf_crop_small.mp4" type="video/mp4">
-        </video> -->
-
-        <iframe 
-          id="info-video"
-          width="560" height="315" 
-          src="https://www.youtube.com/embed/NJhbdSy6nss?si=tdyFAO_6qo_qVlhz" 
-          title="YouTube video player" 
-          frameborder="0" 
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-          allowfullscreen>
-        </iframe>
+          class="no-background">
         </div>
-    </v-dialog>
-
-
-    <!-- This dialog contains the informational content that is displayed when the book icon is clicked -->
-
-    <v-dialog
-      :style="cssVars"
-      class="bottom-sheet"
-      id="text-bottom-sheet"
-      hide-overlay
-      persistent
-      no-click-animation
-      absolute
-      width="100%"
-      :scrim="false"
-      location="bottom"
-      v-model="showTextSheet"
-      transition="dialog-bottom-transition"
-    >
-      <v-card height="100%">
-        <v-tabs
-          v-model="tab"
-          height="32px"
-          :color="accentColor"
-          :slider-color="accentColor"
-          id="tabs"
-          dense
+        <div
+          v-else
+          :class="['modal', showSplashScreen ? 'no-background' : '']"
+          id="modal-loading"
+          v-show="isLoading || userNotReady"
         >
-          <v-tab class="info-tabs" tabindex="0"><h3>Information</h3></v-tab>
-          <v-tab class="info-tabs" tabindex="0"><h3>Using WWT</h3></v-tab>
-        </v-tabs>
-        <font-awesome-icon
-          id="close-text-icon"
-          class="control-icon"
-          icon="times"
-          size="lg"
-          @click="showTextSheet = false"
-          @keyup.enter="showTextSheet = false"
-          tabindex="0"
-        ></font-awesome-icon>
-        <v-window v-model="tab" id="tab-items" class="pb-2 no-bottom-border-radius">
-          <v-window-item>
-            <v-card class="no-bottom-border-radius scrollable">
-              <v-card-text class="info-text no-bottom-border-radius">
-                <h3>What is the RadWave?</h3>
-                <p>The more humans study our universe, the more we find that it is richer and more complex than we previously realized. The Radcliffe Wave (or RadWave for short) is a massive structure that was discovered in our Milky Way galaxy by astronomers João Alves, Catherine Zucker, Alyssa Goodman, and others in 2020<sup><a href="#2020team" class="highlight">[1]</a></sup>. The RadWave is made up of gas, dust, and stars loosely connected in a wave-like shape. It is so huge and so close to us that earlier scientists did not see that these parts were all connected. Learn more about the discovery of the RadWave here!</p>
+          <div v-if="isLoading" class="container">
+            <div  class="spinner"></div>
+            <p>Loading …</p>
+          </div>
+          <div v-else>
+            <v-btn
+              v-if="!showSplashScreen"
+              id="loading-button"
+              color="white"
+              :disabled="isLoading"
+              variant="outlined"
+              @click="userNotReady = false"
+              @keyup.enter="userNotReady = false"
+              elevation="10"
+              :size="smallSize ? 'large' : 'x-large'"
+              rounded="lg"
+              prepend-icon="mdi-check-circle-outline"
+            >
+              <strong>Start</strong>
+            </v-btn>
+          </div>  
+        </div>
+      </transition>
 
-                <h3>How do scientists make predictions from models and data?</h3>
-                <p>The RadWave looks like a wave, but does it also move like a wave? Ralf Konietzka, with Goodman, Zucker, and others<sup><a href="#2024team" class="highlight">[2]</a></sup> used data from the Gaia satellite to answer this question by measuring the speed and direction of stars in different parts of the wave. Just like weather reporters can predict where a storm will go based on wind patterns, Konietzka uses the information about the RadWave’s current motion to predict how it will move in the future. The best model that fits the data is shown in this interactive.</p>
+      <!-- This block contains the elements (e.g. icon buttons displayed at/near the top of the screen -->
 
-                <h3>Why do the blue star clusters fade out?</h3>
-                <p>The time it takes for the RadWave to complete a “wave” is about 100 million years, but the clouds and young star clusters along the wave will disperse in less than 30 million years, so the blue dots that represent the star clusters fade out in the interactive view to reflect this.</p>
+      <div class="top-content">
+        <div v-if="modeReactive != null" id="left-buttons">
+          <icon-button
+            fa-icon="house"
+            @activate="() => {
+              positionReset();
+              timeReset();
+            }"
+            :color="buttonColor"
+            tooltip-text="Reset this view"
+            tooltip-location="start"
+          ></icon-button>
+          <icon-button
+            v-model="showTextSheet"
+            fa-icon="book-open"
+            :color="buttonColor"
+            :tooltip-text="showTextSheet ? 'Hide Info' : 'Learn More'"
+            tooltip-location="start"
+          >
+          </icon-button>
+          <icon-button
+            v-model="showVideoSheet"
+            fa-icon="video"
+            :color="buttonColor"
+            tooltip-text="Watch video"
+            tooltip-location="start"
+          >
+          </icon-button>
+        </div>
+        <div id="center-buttons">
+  <!-- <p class="pointer-events"> {{ wwtPosition }} </p> -->
+          <icon-button
+            v-if="false"
+            md-icon="mdi-sine-wave"
+            @activate="toggleFullwaveMode()"
+            :color="buttonColor"
+            tooltip-text="Full Wave Mode"
+            tooltip-location="bottom"
+          >
+          <template v-slot:button>
+            <span v-if="modeReactive != 'full'" class="no-select">View the Full Radcliffe Wave</span>
+            <v-icon v-if="modeReactive == 'full'">mdi-arrow-left</v-icon>
+          </template>
+          </icon-button>
+          
+          <icon-button
+            v-if="(playCount > 0) ?? (modeReactive == 'full')"
+            @activate="modeReactive = modeReactive == '3D' ? '2D' : '3D'"
+            :color="buttonColor"
+            tooltip-text="Switch modes"
+            tooltip-location="start"
+          >
+          <template v-slot:button>
+            <span class="no-select">See this {{ modeReactive == '3D' ? ' on the Sky (2D)' : 'in the Galaxy (3D)' }}</span>
+          </template>
+          </icon-button>
+          <icon-button
+            v-if="(playCount > 0) && modeReactive=='3D'"
+            @activate="() => {
+              positionReset();
+              timeReset();
+              playing=true;
+            }"
+            :color="buttonColor"
+            tooltip-text="Replay Wave Motion"
+            tooltip-location="end"
+          >
+          <template v-slot:button>
+            Replay
+          </template>
+          </icon-button>
+          
+          
+          
+        </div>
+        <div id="right-buttons">
+                  <!-- add a menu selector for background2DImageset -->
+        </div>
+      </div>
 
-                <h3>Science Credits</h3>
-                <p>[1] <span class="highlight" id="2020team">2020 RadWave Team: </span>
-                João Alves, Catherine Zucker, Alyssa A. Goodman, Joshua S. Speagle, Stefan Meingast, Thomas Robitaille, Douglas P. Finkbeiner, Edward F. Schlafly, and Gregory M. Green</p>
-                <p>[2] <span class="highlight" id="2024team">2024 RadWave in Motion Team:</span>
-                Ralf Konietzka, Alyssa A. Goodman, Catherine Zucker, Andreas Burkert, João Alves, Michael Foley, Cameren Swiggum, Maria Koller, and Núria Miret-Roig</p>
-                <v-spacer class="end-spacer"></v-spacer>
-              </v-card-text>
-            </v-card>
-          </v-window-item>
-          <v-window-item>
-            <v-card class="no-bottom-border-radius scrollable">
-              <v-card-text class="info-text no-bottom-border-radius">
-                <v-container>
-                  <v-row align="center">
-                  <v-col cols="4">
-                      <v-chip
-                        label
-                        outlined
-                      >
-                        Pan
-                      </v-chip>
-                    </v-col>
-                    <v-col cols="8" class="pt-1">
-                      <strong>{{ touchscreen ? "press + drag" : "click + drag" }}</strong>  {{ touchscreen ? "" : "or" }}  <strong>{{ touchscreen ? "" : "W-A-S-D" }}</strong> {{ touchscreen ? "" : "keys" }}<br>
-                    </v-col>
-                  </v-row>
-                  <v-row align="center">
-                    <v-col cols="4">
-                      <v-chip
-                        label
-                        outlined
-                      >
-                        Zoom
-                      </v-chip>
-                    </v-col>
-                    <v-col cols="8" class="pt-1">
-                      <strong>{{ touchscreen ? "pinch in and out" : "scroll in and out" }}</strong> {{ touchscreen ? "" : "or" }} <strong>{{ touchscreen ? "" : "I-O" }}</strong> {{ touchscreen ? "" : "keys" }}<br>
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col cols="12">
-                      <div class="credits">
-                        <h3>Science Credits:</h3>
-                        Ralf Konietzka<br>
-                        Catherine Zucker<br>
-                        Alyssa A. Goodman<br>
-                      </div>
-                      <div class="credits">
-                      <h3>Credits:</h3>
-                      <p>This Data Story is powered by WorldWide Telescope.</p>
-                      <h4><a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank" rel="noopener noreferrer">CosmicDS</a> Team:</h4>
-                      Jon Carifio<br>
-                      John Lewis<br>
-                      Pat Udomprasert<br>
-                      Alyssa Goodman<br>
-                      Mary Dussault<br>
-                      Harry Houghton<br>
-                      Anna Nolin<br>
-                      Evaluator: Sue Sunbury<br>
-                      <br>
-                      <h4>WorldWide Telescope Team:</h4>
-                      Peter Williams<br>
-                      A. David Weigel<br>
-                      Jon Carifio<br>
-                      </div>
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col>
-                      <funding-acknowledgement/>
-                    </v-col>
-                  </v-row>
+
+      <!-- This block contains the elements (e.g. the project icons) displayed along the bottom of the screen -->
+
+      <div class="bottom-content">
+        <div v-if="modeReactive != '2D'" id="time-controls">
+          <icon-button
+            id="play-pause-icon"
+            :fa-icon="!(playing) ? 'play' : 'pause'"
+            fa-size='xl'
+            @activate="() => {
+              playing = !(playing);
+            }"
+            :color="buttonColor"
+            tooltip-text="Play/Pause"
+            tooltip-location="top"
+            tooltip-offset="5px"
+            :show-tooltip="!mobile"
+          ></icon-button>
+          <input
+            type="range"
+            id="time-slider"
+            min="0"
+            max="720"
+            :oninput="onInputChange"
+          />
+        </div>
+        <div v-else id="time-controls" style="width:50%">
+          <v-select
+            v-if="modeReactive == '2D'"
+            v-model="background2DImageset"
+            :items="allSkyImagesets"
+            label="Background"
+            outlined
+            hide-details
+            :color="accentColor"
+            class="pointer-events"
+            />
+        </div>
+        <div id="body-logos" v-if= "!smallSize">
+          <credit-logos/>
+        </div>
+      </div>
+
+
+      <!-- This dialog contains the informational content that is displayed when the book icon is clicked -->
+
+      <v-dialog
+        :style="cssVars"
+        class="bottom-sheet"
+        id="text-bottom-sheet"
+        hide-overlay
+        persistent
+        no-click-animation
+        absolute
+        width="100%"
+        :scrim="false"
+        location="bottom"
+        v-model="showTextSheet"
+        transition="dialog-bottom-transition"
+      >
+        <v-card height="100%">
+          <v-tabs
+            v-model="tab"
+            height="32px"
+            :color="accentColor"
+            :slider-color="accentColor"
+            id="tabs"
+            dense
+          >
+            <v-tab class="info-tabs" tabindex="0"><h3>Information</h3></v-tab>
+            <v-tab class="info-tabs" tabindex="0"><h3>Using WWT</h3></v-tab>
+          </v-tabs>
+          <font-awesome-icon
+            id="close-text-icon"
+            class="control-icon"
+            icon="times"
+            size="lg"
+            @click="showTextSheet = false"
+            @keyup.enter="showTextSheet = false"
+            tabindex="0"
+          ></font-awesome-icon>
+          <v-window v-model="tab" id="tab-items" class="pb-2 no-bottom-border-radius">
+            <v-window-item>
+              <v-card class="no-bottom-border-radius scrollable">
+                <v-card-text class="info-text no-bottom-border-radius">
+                  <h3>What is the RadWave?</h3>
+                  <p>The more humans study our universe, the more we find that it is richer and more complex than we previously realized. The Radcliffe Wave (or RadWave for short) is a massive structure that was discovered in our Milky Way galaxy by astronomers João Alves, Catherine Zucker, Alyssa Goodman, and others in 2020<sup><a href="#2020team" class="highlight">[1]</a></sup>. The RadWave is made up of gas, dust, and stars loosely connected in a wave-like shape. It is so huge and so close to us that earlier scientists did not see that these parts were all connected. Learn more about the discovery of the RadWave here!</p>
+
+                  <h3>How do scientists make predictions from models and data?</h3>
+                  <p>The RadWave looks like a wave, but does it also move like a wave? Ralf Konietzka, with Goodman, Zucker, and others<sup><a href="#2024team" class="highlight">[2]</a></sup> used data from the Gaia satellite to answer this question by measuring the speed and direction of stars in different parts of the wave. Just like weather reporters can predict where a storm will go based on wind patterns, Konietzka uses the information about the RadWave’s current motion to predict how it will move in the future. The best model that fits the data is shown in this interactive.</p>
+
+                  <h3>Why do the blue star clusters fade out?</h3>
+                  <p>The time it takes for the RadWave to complete a “wave” is about 100 million years, but the clouds and young star clusters along the wave will disperse in less than 30 million years, so the blue dots that represent the star clusters fade out in the interactive view to reflect this.</p>
+
+                  <h3>Science Credits</h3>
+                  <p>[1] <span class="highlight" id="2020team">2020 RadWave Team: </span>
+                  João Alves, Catherine Zucker, Alyssa A. Goodman, Joshua S. Speagle, Stefan Meingast, Thomas Robitaille, Douglas P. Finkbeiner, Edward F. Schlafly, and Gregory M. Green</p>
+                  <p>[2] <span class="highlight" id="2024team">2024 RadWave in Motion Team:</span>
+                  Ralf Konietzka, Alyssa A. Goodman, Catherine Zucker, Andreas Burkert, João Alves, Michael Foley, Cameren Swiggum, Maria Koller, and Núria Miret-Roig</p>
                   <v-spacer class="end-spacer"></v-spacer>
-                </v-container>              
-              </v-card-text>
-            </v-card>
-          </v-window-item>
-        </v-window>
-      </v-card>
-    </v-dialog>
+                </v-card-text>
+              </v-card>
+            </v-window-item>
+            <v-window-item>
+              <v-card class="no-bottom-border-radius scrollable">
+                <v-card-text class="info-text no-bottom-border-radius">
+                  <v-container>
+                    <v-row align="center">
+                    <v-col cols="4">
+                        <v-chip
+                          label
+                          outlined
+                        >
+                          Pan
+                        </v-chip>
+                      </v-col>
+                      <v-col cols="8" class="pt-1">
+                        <strong>{{ touchscreen ? "press + drag" : "click + drag" }}</strong>  {{ touchscreen ? "" : "or" }}  <strong>{{ touchscreen ? "" : "W-A-S-D" }}</strong> {{ touchscreen ? "" : "keys" }}<br>
+                      </v-col>
+                    </v-row>
+                    <v-row align="center">
+                      <v-col cols="4">
+                        <v-chip
+                          label
+                          outlined
+                        >
+                          Zoom
+                        </v-chip>
+                      </v-col>
+                      <v-col cols="8" class="pt-1">
+                        <strong>{{ touchscreen ? "pinch in and out" : "scroll in and out" }}</strong> {{ touchscreen ? "" : "or" }} <strong>{{ touchscreen ? "" : "I-O" }}</strong> {{ touchscreen ? "" : "keys" }}<br>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col cols="12">
+                        <div class="credits">
+                          <h3>Science Credits:</h3>
+                          Ralf Konietzka<br>
+                          Catherine Zucker<br>
+                          Alyssa A. Goodman<br>
+                        </div>
+                        <div class="credits">
+                        <h3>Credits:</h3>
+                        <p>This Data Story is powered by WorldWide Telescope.</p>
+                        <h4><a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank" rel="noopener noreferrer">CosmicDS</a> Team:</h4>
+                        Jon Carifio<br>
+                        John Lewis<br>
+                        Pat Udomprasert<br>
+                        Alyssa Goodman<br>
+                        Mary Dussault<br>
+                        Harry Houghton<br>
+                        Anna Nolin<br>
+                        Evaluator: Sue Sunbury<br>
+                        <br>
+                        <h4>WorldWide Telescope Team:</h4>
+                        Peter Williams<br>
+                        A. David Weigel<br>
+                        Jon Carifio<br>
+                        </div>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <funding-acknowledgement/>
+                      </v-col>
+                    </v-row>
+                    <v-spacer class="end-spacer"></v-spacer>
+                  </v-container>              
+                </v-card-text>
+              </v-card>
+            </v-window-item>
+          </v-window>
+        </v-card>
+      </v-dialog>
 
-  </div>
+    </div>
+  </v-col>
+</v-row>
 </v-app>
 </template>
 
@@ -1143,9 +1116,16 @@ export default defineComponent({
 
 <style lang="less">
 
+#main-content {
+  position: relative;
+}
 
 
 //  =====================================
+
+#splash-overlay {
+  position: unset;
+}
 
 #splash-screen #close-splash-button {
   position: relative;
