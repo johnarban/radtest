@@ -35,5 +35,5 @@
     "vue-eslint-parser": "^9.4.2",
     "webpack": "^5.89.0"
   },
-  "name": "@cosmicds/radwave-in-motion"
+  "name": "@cosmicds/radtest"
 }

@@ -32,7 +32,7 @@ library.add(faHouse);
 const update = (el: HTMLElement, binding: Vue.DirectiveBinding) => el.style.visibility = (binding.value) ? "hidden" : "";
 
 createApp(Radwave, {
-  wwtNamespace: "radwave-in-motion"
+  wwtNamespace: "radtest"
 })
  
   // Plugins
