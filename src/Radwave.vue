@@ -109,7 +109,6 @@
             fa-icon="house"
             @activate="() => {
               positionReset();
-              timeReset();
             }"
             :color="buttonColor"
             tooltip-text="Reset this view"
@@ -149,7 +148,6 @@
           </icon-button>
           
           <icon-button
-            v-if="(playCount > 0) ?? (modeReactive == 'full')"
             @activate="modeReactive = modeReactive == '3D' ? '2D' : '3D'"
             :color="buttonColor"
             tooltip-text="Switch modes"
@@ -159,22 +157,6 @@
             <span class="no-select">See this {{ modeReactive == '3D' ? ' on the Sky (2D)' : 'in the Galaxy (3D)' }}</span>
           </template>
           </icon-button>
-          <icon-button
-            v-if="(playCount > 0) && modeReactive=='3D'"
-            @activate="() => {
-              positionReset();
-              timeReset();
-              playing=true;
-            }"
-            :color="buttonColor"
-            tooltip-text="Replay Wave Motion"
-            tooltip-location="end"
-          >
-          <template v-slot:button>
-            Replay
-          </template>
-          </icon-button>
-          
           
           
         </div>
@@ -187,40 +169,9 @@
       <!-- This block contains the elements (e.g. the project icons) displayed along the bottom of the screen -->
 
       <div class="bottom-content">
-        <div v-if="modeReactive != '2D'" id="time-controls">
-          <icon-button
-            id="play-pause-icon"
-            :fa-icon="!(playing) ? 'play' : 'pause'"
-            fa-size='xl'
-            @activate="() => {
-              playing = !(playing);
-            }"
-            :color="buttonColor"
-            tooltip-text="Play/Pause"
-            tooltip-location="top"
-            tooltip-offset="5px"
-            :show-tooltip="!mobile"
-          ></icon-button>
-          <input
-            type="range"
-            id="time-slider"
-            min="0"
-            max="720"
-            :oninput="onInputChange"
-          />
-        </div>
-        <div v-else id="time-controls" style="width:50%">
-          <v-select
-            v-if="modeReactive == '2D'"
-            v-model="background2DImageset"
-            :items="allSkyImagesets"
-            label="Background"
-            outlined
-            hide-details
-            :color="accentColor"
-            class="pointer-events"
-            />
-        </div>
+        <v-btn @click="updateNoisyLayers" color="white" elevation="10" rounded="lg">
+          <strong>Update Noise</strong>
+        </v-btn>
         <div id="body-logos" v-if= "!smallSize">
           <credit-logos/>
         </div>
@@ -379,6 +330,8 @@ import { AltTypes, AltUnits, MarkerScales, RAUnits } from "@wwtelescope/engine-t
 
 import { zoom } from "./wwt-hacks";
 
+import { tableToCSV, csvToTable, randomNormal } from "./util";
+
 import sunCsv from "./assets/Sun_radec.csv";
 import bestFitCsv from "./assets/radwave/RW_best_fit_oscillation_phase_radec_downsampled.csv";
 
@@ -404,17 +357,15 @@ type SheetType = "text" | "video" | null;
 // A hack, but we don't need anything more than this
 type Row = Record<string, number>;
 
-const SECONDS_PER_DAY = 86400;
+const _SECONDS_PER_DAY = 86400;
 
 let bestFitAnnotations: PolyLine[] = [];
-const bestFitOffsets3D = [-2, -1, 0, 1, 2];
+const bestFitOffsets3D = [0];
 const bestFitOffsets2D = [0];
 let bestFitOffsets = bestFitOffsets3D ;
 const bestFitLayer = new SpreadSheetLayer();
 const startDate = new Date("2023-10-18 11:55:55Z");
-const endDate = new Date("2025-10-06 11:55:55Z");
-const startTime = startDate.getTime();
-const endTime = endDate.getTime();
+
 
 let phase = 0;
 let altFactor = 1;
@@ -422,14 +373,8 @@ let mode = "3D" as "2D" | "3D" | "full" | null;
 
 const phaseRowCount = 300;
 
-function getCurrentPhaseInfo(): [number, number] {
-  const now = SpaceTimeController.get_now().getTime();
-  const interval = 8.64e7;  // 1 day in ms
-  const intervals = Math.floor((now - startTime) / interval);
-  return [Math.floor(intervals / 360), intervals % 360];
-}
 
-function updateBestFitAnnotations(phase: number): void {
+function _updateBestFitAnnotations(): void {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   bestFitAnnotations.forEach(ann => WWTControl.scriptInterface.removeAnnotation(ann));
@@ -470,16 +415,6 @@ function addPhasePointsToAnnotation(layer: SpreadSheetLayer, annotation: Annotat
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     annotation._points$1.push(pos);
-  }
-}
-
-
-
-function updateSlider(value: number) {
-  const input = document.querySelector("#time-slider");
-  if (input) {
-    const slider = input as HTMLInputElement;
-    slider.value = String(value);
   }
 }
 
@@ -546,12 +481,12 @@ export default defineComponent({
       buttonColor: "#ffffff",
 
       tab: 0,
-      playing: false,
-      timeRate: 120 * SECONDS_PER_DAY,
-      playCount: 0,
 
       phaseCol: 3,
       clusterLayers: [] as SpreadSheetLayer[],
+      clusterText: [] as string[],
+      noiseSigma: 50,
+      noiseAddedLayers: [] as SpreadSheetLayer[],
 
       initialOpacity,
       fadeStartPhase,
@@ -559,6 +494,7 @@ export default defineComponent({
       phaseOpacitySlope,
       phaseOpacityIntercept,
       clusterColor: "#1f3cf1",
+      noiseColor: "#ff0000",
       defaultClusterDecay: 15,
       opacity2Dto3DFactor: 2.5,
 
@@ -611,6 +547,7 @@ export default defineComponent({
       this.applySetting(["solarSystemCosmos", false]);
       // this.applySetting(["solarSystemPlanets", false]);
       this.setClockSync(false);
+      this.setClockRate(0);
 
       this.setupBestFitLayer();
       const sunPromise = this.setupSunLayer();
@@ -620,7 +557,6 @@ export default defineComponent({
         this.sunLayer = sunLayer;
         this.clusterLayers = clusterLayers;
         this.setTime(startDate);
-        updateSlider(phase);
         window.requestAnimationFrame(this.onAnimationFrame);
         this.layersLoaded = true;
       });
@@ -709,7 +645,8 @@ export default defineComponent({
         rollRad: this.wwtRollRad,
         zoomDeg: this.wwtZoomDeg,
       };
-    }
+    },
+    
   },
 
   methods: {
@@ -717,9 +654,7 @@ export default defineComponent({
       this.showSplashScreen = false; 
       // Promise based wait for isLoading to be false
       asyncWaitForCondition(() => (!this.isLoading && !this.userNotReady), 100).then(() => {
-        setTimeout(() => {
-          this.playing = true;
-        }, 500);
+        console.log('closeSplashScreen');
       });
       
     },
@@ -742,10 +677,6 @@ export default defineComponent({
       this.setBackgroundImageByName(this.background2DImageset);
       this.applySetting(["showSolarSystem", false]);
       this.sunLayer?.set_opacity(0);
-      this.playing = false;
-      phase = 0;
-      updateSlider(phase);
-      updateBestFitAnnotations(phase);    
       this.setTime(startDate);
 
       return asyncSetTimeout(() => {
@@ -772,7 +703,6 @@ export default defineComponent({
       this.setBackgroundImageByName("Solar System");
       this.setForegroundImageByName("Solar System");
       this.sunLayer?.set_opacity(1);
-      updateBestFitAnnotations(phase);
 
       return this.gotoRADecZoom({
         ...this.position3D,
@@ -864,14 +794,7 @@ export default defineComponent({
       
     },
 
-    timeReset() {
-      this.playing = false;
-      phase = 0;
-      const time = startTime;
-      updateSlider(phase);
-      updateBestFitAnnotations(phase);
-      this.setTime(new Date(time));
-    },
+
     
     shrinkWWT(aspect: number = null as unknown as number) {
       // default aspect = 5.7
@@ -917,7 +840,7 @@ export default defineComponent({
       if (timeSeries) {
         layer.set_startDateColumn(4);
         layer.set_endDateColumn(5);
-        layer.set_timeSeries(true);
+        layer.set_timeSeries(false);
         layer.set_decay(this.defaultClusterDecay);
       }
     },
@@ -962,75 +885,95 @@ export default defineComponent({
       altFactor = altFactor / (1000 * 149598000);
     },
 
-    opacityForPhase(phase: number): number {
-      return Math.min(Math.max(this.phaseOpacitySlope * phase + this.phaseOpacityIntercept, 0), this.initialOpacity);
+    opacityForPhase(_phase: number): number {
+      return 1; // Math.min(Math.max(this.phaseOpacitySlope * phase + this.phaseOpacityIntercept, 0), this.initialOpacity);
     },
 
     setupClusterLayers(): Promise<SpreadSheetLayer[]> {
       const color = Color.load(this.clusterColor);
       const promises: Promise<SpreadSheetLayer>[] = [];
-      for (let phase = -15; phase <= this.fadeEndPhase; phase++) {
-        const prom = import(`./assets/radwave/RW_cluster_oscillation_${phase}_updated_radec.csv`).then(res => {
-          let text = res.default;
-          text = text.replace(/\n/g, "\r\n");
-          return this.createTableLayer({
-            referenceFrame: "Sky",
-            name: `Radcliffe Wave Clusters Phase ${phase}`,
-            dataCsv: text
-          }).then(layer => {
-            this.basicLayerSetup(layer, true);
-            layer.set_opacity(this.opacityForPhase(phase));
-            layer.set_color(color);
-            layer.set_scaleFactor(70);
-            //console.log(layer);
-            return layer;
-          });
+      const phase = 0;
+      const prom = import(`./assets/radwave/RW_cluster_oscillation_${phase}_updated_radec.csv`).then(res => {
+        let text = res.default;
+        text = text.replace(/\n/g, "\r\n");
+        this.clusterText.push(text);
+        return this.createTableLayer({
+          referenceFrame: "Sky",
+          name: `Radcliffe Wave Clusters Phase ${phase}`,
+          dataCsv: text
+        }).then(layer => {
+          this.basicLayerSetup(layer, true);
+          layer.set_opacity(0*this.opacityForPhase(phase));
+          layer.set_color(color);
+          layer.set_scaleFactor(70);
+          //console.log(layer);
+          console.log(layer);
+          return layer;
         });
-        promises.push(prom);
-      }
+      });
+      promises.push(prom);
+
       return Promise.all(promises);
     },
 
-    onInputChange(event: InputEvent) {
-      this.playing = false;
-      const target = event.target as HTMLInputElement;
-      const value = Number(target.value);
-      if (!isNaN(value)) {
-        phase = Math.max(0, Math.min(value, 720)); 
-        const time = startTime + (value / 720) * (endTime - startTime);
-        updateBestFitAnnotations(phase);
-        this.setTime(new Date(time)); 
-      }
-    },
     
     onAnimationFrame(_timestamp: DOMHighResTimeStamp) {
-      let newPhase = phase;
-      if (SpaceTimeController.get_syncToClock()) {
-        if (SpaceTimeController.get_now() >= endDate) {
-          SpaceTimeController.set_now(startDate);
-          this.playing = false;
-          this.playCount += 1;
-        } 
-        const [currPeriod, currPhase] = getCurrentPhaseInfo();
-        newPhase = currPeriod * 360 + currPhase;
+      window.requestAnimationFrame(this.onAnimationFrame);
+    },
+    
+    addNoiseToLayer(layer: SpreadSheetLayer, text: string): Promise<SpreadSheetLayer> {
+      const color = Color.load(this.noiseColor);
+      const table = csvToTable(text) as { 'ra': string, 'dec': string, 'd': string }[];
+      let distance = table.map(row => +row['d']);
+      distance = distance.map(d => d + 0.3 * d * randomNormal());
+      const ra = table.map(row => +row['ra']);
+      const newTable = table.map((row, i) => {
+        return {
+          ...row,
+          'd': distance[i].toFixed(2),
+          'ra': ra[i].toFixed(2)
+        };
+      });
+      const newText = tableToCSV(newTable);
+      return this.createTableLayer({
+        referenceFrame: "Sky",
+        name: layer.get_name() + " with noise",
+        dataCsv: newText
+      }).then(layer => {
+        this.basicLayerSetup(layer, true);
+        layer.set_color(color);
+        layer.set_scaleFactor(30);
+        layer.set_opacity(1);
+        return layer;
+      }).catch((err) => {
+        console.log(err);
+        return layer;
+      });
+    },
+    
+    
+    
+    updateNoisyLayers() {
+      if (this.noiseAddedLayers.length > 0) {
+        this.noiseAddedLayers.forEach(layer => {
+          this.deleteLayer(layer.id);
+        });
+        this.noiseAddedLayers = [];
       }
-      if (newPhase !== phase) {
-        phase = newPhase;
-        updateBestFitAnnotations(phase);
-        updateSlider(phase);
+      for (let i = 0; i < 2; i++) {
+        this.clusterLayers.forEach((layer, i) => {
+          this.addNoiseToLayer(layer, this.clusterText[i]).then(noiseLayer => {
+            this.noiseAddedLayers.push(noiseLayer);
+          });
+        });
       }
       window.requestAnimationFrame(this.onAnimationFrame);
     }
+    
+    
   },
 
   watch: {
-    playing(play: boolean) {
-      if (!play) {
-        this.playCount += 1;
-      }
-      this.setClockSync(play);
-      this.setClockRate(play ? this.timeRate : 0);
-    },
     
     background2DImageset(name: string) {
       
@@ -1073,6 +1016,7 @@ export default defineComponent({
     // },
     
     modeReactive(newVal, oldVal) {
+      console.log('modeReactive', newVal, oldVal);
       mode = newVal;
       if (oldVal == newVal) {
         if (newVal == "2D") {
@@ -1096,8 +1040,6 @@ export default defineComponent({
           this.toggleUI();
         }
       }
-      
-      
       
       if (newVal == "2D") {
         this.set2DMode();
@@ -1200,7 +1142,7 @@ export default defineComponent({
   bottom: 1rem;
   right: 1rem;
   width: calc(100% - 2rem);
-  pointer-events: none;
+  pointer-events: auto;
   align-items: center;
   gap: 5px;
 }
